@@ -1,0 +1,42 @@
+name: Oyun2048
+options:
+  bundleIdPrefix: com.oyun2048
+  deploymentTarget:
+    iOS: "15.0"
+targets:
+  Oyun2048:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Oyun2048/Sources
+      - path: Oyun2048/Web
+        type: folder
+        buildPhase: resources
+      - path: Oyun2048/Assets.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.oyun2048.ipad.game
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+    info:
+      path: Oyun2048/Info.plist
+      properties:
+        CFBundleDisplayName: "2048 Oyunu"
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        "UISupportedInterfaceOrientations~ipad":
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIStatusBarStyle: UIStatusBarStyleDefault
+        UIViewControllerBasedStatusBarAppearance: false

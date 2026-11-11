@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f3ea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>2048 – iPad Oyunu</title>
+  <style>
+    :root { color-scheme: light; --ink:#514a43; --muted:#83776b; --paper:#f7f3ea; --board:#b6a99a; --light:#ffffff; --gold:#eebd73; }
+    * { box-sizing:border-box; }
+    [hidden] { display:none !important; }
+    html { height:100%; overscroll-behavior:none; }
+    body { min-height:100%; margin:0; padding:calc(18px + env(safe-area-inset-top)) 18px calc(20px + env(safe-area-inset-bottom)); background:radial-gradient(circle at 80% -5%,#fffaf1 0%,#f7f3ea 50%,#f2ebe0 100%); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; color:var(--ink); -webkit-text-size-adjust:100%; }
+    .shell { width:min(100%,540px); margin:0 auto; }
+    .top { display:flex; justify-content:space-between; gap:14px; align-items:center; }
+    .title-wrap { display:flex; align-items:center; gap:11px; }
+    .logo { width:78px; height:78px; display:flex; align-items:center; justify-content:center; border-radius:21px; background:#b4a392; color:white; font-size:27px; font-weight:900; letter-spacing:-2px; box-shadow:0 6px 16px #8e796c22; }
+    .title-text { font-weight:800; font-size:24px; line-height:1.05; letter-spacing:-.8px; }
+    .sub-title { margin-top:7px; color:var(--muted); font-size:13px; font-weight:600; }
+    .scores { display:flex; gap:7px; }
+    .score-box { min-width:76px; padding:10px 10px 9px; border-radius:14px; text-align:center; background:#b4a392; color:white; }
+    .score-box.best { background:#a48e78; }
+    .score-box .name { font-size:10px; font-weight:800; letter-spacing:1.1px; opacity:.87; }
+    .score-box .value { font-size:22px; font-weight:900; font-variant-numeric:tabular-nums; margin-top:3px; }
+    .instruction { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:19px 1px 17px; }
+    .instruction p { margin:0; font-size:14px; line-height:1.5; color:#776d63; }
+    .instruction strong { color:#514a43; }
+    .chip { flex-shrink:0; display:flex; align-items:center; gap:5px; border-radius:100px; padding:8px 10px; font-size:12px; font-weight:800; background:#fff5de; color:#aa722f; }
+    .board-wrap { position:relative; }
+    #board { width:100%; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:repeat(4,minmax(0,1fr)); aspect-ratio:1/1; padding:11px; gap:10px; background:var(--board); border-radius:19px; touch-action:none; -webkit-user-select:none; user-select:none; box-shadow:0 9px 25px #95877922; }
+    .tile { min-width:0; min-height:0; display:flex; align-items:center; justify-content:center; border-radius:11px; background:#c9beb2; color:#776e65; font-weight:900; font-variant-numeric:tabular-nums; font-size:clamp(25px,6.8vw,48px); letter-spacing:-1.9px; }
+    .tile[data-digits="4"] { font-size:clamp(22px,5.8vw,40px); }
+    .tile[data-digits="5"], .tile[data-digits="6"] { font-size:clamp(18px,4.6vw,31px); letter-spacing:-1.5px; }
+    .tile.v2 { background:#eee4da; } .tile.v4 { background:#ede0c8; } .tile.v8 { background:#f2b179; color:#fff; } .tile.v16 { background:#f59563; color:#fff; }
+    .tile.v32 { background:#f67c5f; color:#fff; } .tile.v64 { background:#f65e3b; color:#fff; }
+    .tile.v128 { background:#edcf72; color:#fff; } .tile.v256 { background:#edcc61; color:#fff; }
+    .tile.v512 { background:#edc850; color:#fff; } .tile.v1024 { background:#edc53f; color:#fff; }
+    .tile.v2048 { background:#edc22e; color:white; box-shadow:inset 0 0 0 2px #ffffff66; }
+    .tile.vsuper { background:#3c3a32; color:#fff; }
+    .tile.occupied { animation:pop .12s ease-out; }
+    @keyframes pop { from {transform:scale(.94)} to {transform:scale(1)} }
+    .overlay { position:absolute; inset:0; z-index:5; background:#f7f0ddb9; border-radius:19px; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .dialog { background:white; width:min(100%,360px); border-radius:23px; padding:27px 20px 22px; text-align:center; box-shadow:0 15px 44px #64534745; }
+    .dialog-icon { font-size:39px; }
+    .dialog h2 { font-size:29px; margin:9px 0 7px; }
+    .dialog p { margin:0 0 23px; line-height:1.5; color:var(--muted); font-size:15px; }
+    .dialog-actions { display:flex; gap:9px; justify-content:center; }
+    button { font:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    button:focus-visible { outline:3px solid #3c8fdb; outline-offset:3px; }
+    .button { border:0; border-radius:13px; padding:13px 15px; background:#907a65; color:white; font-size:14px; font-weight:800; transition:opacity .1s; }
+    .button.primary { background:#edab60; color:#392d22; }
+    .button.secondary { background:#e8ded2; color:#564c43; }
+    .button:disabled { opacity:.47; cursor:not-allowed; }
+    .actions { margin-top:18px; display:flex; gap:10px; }
+    .actions .button { flex:1; min-height:48px; }
+    .hint-card { margin-top:17px; padding:15px 17px; background:#fffaf1; border-radius:17px; border:1px solid #eae0d0; display:flex; align-items:center; gap:11px; }
+    .hint-icon { width:37px; height:37px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#f7e5c6; font-size:22px; }
+    .hint-card p { margin:0; color:#786e64; font-size:13px; line-height:1.5; }
+    .dpad { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:13px; }
+    .direction { width:44px; height:37px; border:1px solid #dccfbe; border-radius:12px; background:#fffaf1; color:#786451; font-size:22px; font-weight:800; }
+    .direction:active { background:#f6dcaf; }
+    .footer { text-align:center; font-size:11px; color:#9a9084; margin:18px 0 0; }
+    @media (max-width:410px) { body{padding-left:12px;padding-right:12px;} .logo{width:65px;height:65px;font-size:23px;border-radius:18px;} .title-text{font-size:19px;} .sub-title{font-size:11px;} .score-box{min-width:64px;padding:8px;} .score-box .value{font-size:19px;} #board{gap:8px;padding:9px;} .tile{border-radius:9px;} .chip{font-size:11px;} .instruction p{font-size:12px;} }
+    @media (min-width:760px) { .shell { padding-top:10px; } .tile {font-size:49px;} }
+    @media (prefers-reduced-motion:reduce) { .tile.occupied {animation:none;} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top">
+      <div class="title-wrap"><div class="logo" aria-hidden="true">2048</div><div><div class="title-text">2048 Oyunu</div><div class="sub-title">Küçük taşlardan büyük zaferlere</div></div></div>
+      <div class="scores">
+        <div class="score-box"><div class="name">SKOR</div><div id="score" class="value">0</div></div>
+        <div class="score-box best"><div class="name">REKOR</div><div id="best" class="value">0</div></div>
+      </div>
+    </header>
+    <div class="instruction"><p><strong>Taşları kaydır, eşleştir, birleştir.</strong><br>2048 taşına ulaşmaya çalış!</p><span class="chip">✦ HEDEF 2048</span></div>
+    <section class="board-wrap" aria-label="2048 oyun alanı">
+      <div id="board" role="grid" aria-label="4 çarpı 4 oyun tahtası; kaydırarak oynayın"></div>
+      <div id="overlay" class="overlay" hidden>
+        <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-detail">
+          <div id="dialog-icon" class="dialog-icon"></div>
+          <h2 id="dialog-title"></h2>
+          <p id="dialog-detail"></p>
+          <div class="dialog-actions"><button id="continue" class="button secondary">Devam Et</button><button id="restart-overlay" class="button primary">Yeni Oyun</button></div>
+        </div>
+      </div>
+    </section>
+    <div class="actions"><button id="restart" class="button primary">↻ Yeni Oyun</button><button id="undo" class="button secondary">↶ Geri Al</button></div>
+    <div class="hint-card"><div class="hint-icon" aria-hidden="true">☝️</div><p><strong>Nasıl oynanır?</strong> Parmağını yukarı, aşağı, sağa veya sola kaydır. Aynı değerdeki taşlar birleşir ve skor kazanırsın.</p></div>
+    <div class="dpad" aria-label="Yön tuşları">
+      <button class="direction" data-direction="left" aria-label="Sola kaydır">←</button>
+      <button class="direction" data-direction="up" aria-label="Yukarı kaydır">↑</button>
+      <button class="direction" data-direction="down" aria-label="Aşağı kaydır">↓</button>
+      <button class="direction" data-direction="right" aria-label="Sağa kaydır">→</button>
+    </div>
+    <p class="footer">2048 • iPad ve iPhone için • İnternet gerektirmez</p>
+    <div id="announcement" role="status" aria-live="polite" class="sr-only" style="position:absolute;left:-10000px"></div>
+  </main>
+  <script src="engine.js"></script>
+  <script>
+  (function () {
+    const STORAGE_KEY = 'oyun2048-v1';
+    const engine = new Engine2048();
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) engine.restore(saved);
+    } catch (_) { /* local file storage may be disabled; game still works */ }
+
+    const board = document.getElementById('board');
+    const score = document.getElementById('score');
+    const best = document.getElementById('best');
+    const undo = document.getElementById('undo');
+    const overlay = document.getElementById('overlay');
+    const dialogIcon = document.getElementById('dialog-icon');
+    const dialogTitle = document.getElementById('dialog-title');
+    const dialogDetail = document.getElementById('dialog-detail');
+    const continueButton = document.getElementById('continue');
+    const announcement = document.getElementById('announcement');
+
+    function save() {
+      try { localStorage.setItem(STORAGE_KEY, engine.serialize()); }
+      catch (_) { /* private mode or file URL restriction */ }
+    }
+
+    function render(message) {
+      const html = [];
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          const value = engine.board[r][c];
+          const cls = value === 0 ? '' : (value <= 2048 ? 'v' + value : 'vsuper');
+          const digits = value === 0 ? 0 : String(value).length;
+          html.push('<div role="gridcell" aria-label="' + (value || 'boş') + '" class="tile ' + cls + (value ? ' occupied' : '') + '" data-digits="' + digits + '">' + (value || '') + '</div>');
+        }
+      }
+      board.innerHTML = html.join('');
+      score.textContent = engine.score;
+      best.textContent = engine.best;
+      undo.disabled = !engine.canUndo;
+      const showDialog = engine.showWin || engine.over;
+      overlay.hidden = !showDialog;
+      if (engine.showWin) {
+        dialogIcon.textContent = '🏆';
+        dialogTitle.textContent = 'Tebrikler!';
+        dialogDetail.textContent = '2048 taşına ulaştın! İstersen daha yüksek skora devam edebilirsin.';
+        continueButton.hidden = false;
+      } else if (engine.over) {
+        dialogIcon.textContent = '🎯';
+        dialogTitle.textContent = 'Oyun bitti';
+        dialogDetail.textContent = 'Taşları hareket ettirecek yer kalmadı. Yeni bir oyun başlatabilirsin.';
+        continueButton.hidden = true;
+      }
+      if (message) announcement.textContent = message;
+      save();
+    }
+
+    function move(dir) {
+      if (engine.move(dir)) render('Skor ' + engine.score);
+    }
+
+    document.getElementById('restart').addEventListener('click', () => {
+      engine.newGame(); render('Yeni oyun başladı');
+    });
+    document.getElementById('restart-overlay').addEventListener('click', () => {
+      engine.newGame(); render('Yeni oyun başladı');
+    });
+    undo.addEventListener('click', () => { if (engine.undo()) render('Son hamle geri alındı'); });
+    continueButton.addEventListener('click', () => { engine.continueAfterWin(); render('Oyun devam ediyor'); });
+    document.querySelectorAll('[data-direction]').forEach(button => {
+      button.addEventListener('click', () => move(button.dataset.direction));
+    });
+
+    let pointer = null;
+    board.addEventListener('pointerdown', (e) => {
+      if (pointer !== null) return;
+      pointer = { id:e.pointerId, x:e.clientX, y:e.clientY };
+      try { board.setPointerCapture(e.pointerId); } catch (_) { /* optional on older iPadOS */ }
+    });
+    board.addEventListener('pointerup', (e) => {
+      if (!pointer || e.pointerId !== pointer.id) return;
+      const dx = e.clientX - pointer.x;
+      const dy = e.clientY - pointer.y;
+      pointer = null;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+      move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+    });
+    board.addEventListener('pointercancel', () => { pointer = null; });
+    window.addEventListener('keydown', e => {
+      const directions = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down', a:'left', d:'right', w:'up', s:'down' };
+      if (!directions[e.key]) return;
+      e.preventDefault();
+      move(directions[e.key]);
+    });
+    render();
+  })();
+  </script>
+</body>
+</html>
